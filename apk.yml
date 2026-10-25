@@ -1,0 +1,45 @@
+name: Generar APK de Riego micro:bit
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # Permite disparar la compilación manualmente con un botón
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: ☕ Configurar Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📱 Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 📦 Instalar dependencias
+        run: npm ci || npm install
+
+      - name: ⚙️ Pre-compilar proyecto nativo Android
+        run: npx expo prebuild --platform android
+
+      - name: 🔨 Compilar APK Release
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: 📤 Subir archivo APK listo para descargar
+        uses: actions/upload-artifact@v4
+        with:
+          name: Riego-microbit-App.apk
+          path: android/app/build/outputs/apk/release/*.apk
